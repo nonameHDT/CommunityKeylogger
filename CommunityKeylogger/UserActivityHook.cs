@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using System.ComponentModel;
+using System.IO;
 
 namespace abc
 {
@@ -81,6 +82,8 @@ namespace abc
 		private const byte VK_CAPITAL = 0x14;
 		private const byte VK_NUMLOCK = 0x90;
 		private const byte VK_CONTROL = 17;
+
+		private const int LLKHF_INJECTED = 0x10;
 
 		#endregion
 
@@ -172,28 +175,31 @@ namespace abc
 				//read structure KeyboardHookStruct at lParam
 				KeyboardHookStruct MyKeyboardHookStruct = (KeyboardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyboardHookStruct));
 
-				// raise KeyPress
-				if (KeyPress != null && wParam == WM_KEYDOWN)
-				{
-					bool isDownShift = ((GetKeyState(VK_SHIFT) & 0x80) == 0x80 ? true : false);
-					bool isDownCapslock = (GetKeyState(VK_CAPITAL) != 0 ? true : false);
+				int fl = MyKeyboardHookStruct.flags & LLKHF_INJECTED;
 
-					byte[] keyState = new byte[256];
-					GetKeyboardState(keyState);
-					byte[] inBuffer = new byte[2];
-					if (ToAscii(MyKeyboardHookStruct.vkCode,
-							  MyKeyboardHookStruct.scanCode,
-							  keyState,
-							  inBuffer,
-							  MyKeyboardHookStruct.flags) == 1)
+				if (fl != 1)
+					// raise KeyPress
+					if (KeyPress != null && wParam == WM_KEYDOWN)
 					{
-						byte key = inBuffer[0];
-						if ((isDownCapslock ^ isDownShift) && Char.IsLetter((char)key)) key = (byte)Char.ToUpper((char)key);
-						KeyEventArgs e = new KeyEventArgs((Keys)key);
-						KeyPress(this, e);
-						handled = handled || e.Handled;
+						bool isDownShift = ((GetKeyState(VK_SHIFT) & 0x80) == 0x80 ? true : false);
+						bool isDownCapslock = (GetKeyState(VK_CAPITAL) != 0 ? true : false);
+
+						byte[] keyState = new byte[256];
+						GetKeyboardState(keyState);
+						byte[] inBuffer = new byte[2];
+						if (ToAscii(MyKeyboardHookStruct.vkCode,
+								  MyKeyboardHookStruct.scanCode,
+								  keyState,
+								  inBuffer,
+								  MyKeyboardHookStruct.flags) == 1)
+						{
+							byte key = inBuffer[0];
+							if ((isDownCapslock ^ isDownShift) && Char.IsLetter((char)key)) key = (byte)Char.ToUpper((char)key);
+							KeyEventArgs e = new KeyEventArgs((Keys)key);
+							KeyPress(this, e);
+							handled = handled || e.Handled;
+						}
 					}
-				}
 
 			}
 

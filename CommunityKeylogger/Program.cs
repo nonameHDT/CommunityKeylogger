@@ -71,8 +71,9 @@ namespace abc
 			{
 				goto End;
 			}
-
+			
 			AppRun abc =  new AppRun();
+	
 			Application.Run();
 
 			End:
