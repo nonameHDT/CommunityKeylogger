@@ -67,6 +67,10 @@ namespace abc
 				goto End;
 			}
 
+			if (!Connection.HaveInternet())
+			{
+				goto End;
+			}
 
 			AppRun abc =  new AppRun();
 			Application.Run();

